@@ -1,0 +1,14 @@
+{
+    "name": "gongzhe/mytest-1",
+    "description": "project",
+    "require-dev": {
+        "owasp/csrf-protector-php": "1.0"
+    },
+    "authors": [
+        {
+            "name": "gongzhe",
+            "email": "1012415019@qq.com"
+        }
+    ],
+    "require": {}
+}
