@@ -10,5 +10,10 @@
             "email": "1012415019@qq.com"
         }
     ],
+    "autoload": {
+        "psr-4": {
+            "gongzhe\\": "src"
+        }
+    },
     "require": {}
 }

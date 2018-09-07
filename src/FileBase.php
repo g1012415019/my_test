@@ -1,6 +1,6 @@
 <?php
 
-namespace Gongzhe\FileBase;
+namespace gongzhe\fileBase;
 
 /**
  * 文件类
