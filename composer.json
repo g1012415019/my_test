@@ -12,7 +12,7 @@
     ],
     "autoload": {
         "psr-4": {
-            "gongzhe\\file\\controlle\\": "src"
+            "gongzhe\\": "src"
         }
     },
     "require": {}
