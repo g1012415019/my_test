@@ -2,8 +2,6 @@
 
 namespace gongzhe\controller;
 
-use gongzhe\utils\Common;
-
 /**
  * 文件类
  * @author gongzhe
@@ -38,6 +36,8 @@ class FileBase
         $this->setConfig();
 
     }
+
+
 
 
     /**
@@ -102,16 +102,6 @@ class FileBase
         $this->config    =$config;
         $this->appSecret =$config['app_secret'];
 
-    }
-
-    /**
-     * 获取用户配置
-     * @author gongzhe
-     * @createTime 2018-09-12 18:35:25
-     * @qqNumber 1012415019
-     */
-    public function getConfig(){
-       de_bug((new Common())->getRequest([]));
     }
 
     /**
