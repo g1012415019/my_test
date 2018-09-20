@@ -67,7 +67,7 @@ class HttpRequest{
         if(!in_array($type, ['get','post','multipart'])){
             return false;
         }
-        
+
         //创建连接
         $this->connect();
 
@@ -120,7 +120,7 @@ class HttpRequest{
 
         //断开连接
         $this->disconnect();
-        
+
         return $retOutput;
 
     }

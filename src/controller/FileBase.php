@@ -2,10 +2,10 @@
 
 namespace gongzhe\controller;
 
-use gongzhe\utils\Common;
 
 use think\Controller;
-
+use think\facade\Cache;
+use gongzhe\utils\Common;
 
 /**
  * 文件类
@@ -20,7 +20,7 @@ class FileBase extends Controller
 
     private $appId;     //应用id
     private $appSecret; //应用秘钥
-    private $config;    //应用秘钥
+    protected $config;    //应用秘钥
 
     /**
      * 1 检查 配置是是否正确
@@ -40,7 +40,25 @@ class FileBase extends Controller
 //
 //        //设置配置值
 //        $this->setConfig();
+        $this->config= Cache::get('app_config');
 
+        if(empty($this->config)){
+
+            //请求接口获取数据
+            $result=(new Common())->httpRequestGet([
+                'url'=>'getAppConfig',
+            ]);
+
+            if($result['code']!=1){
+                // 使用think自带异常类抛出异常
+                throw new \think\Exception($result['msg'], 500);
+            }
+
+            $this->config=$result['data'];
+
+            //应用信息存入缓存
+            Cache::set('app_config',$this->config);
+        }
     }
 
 

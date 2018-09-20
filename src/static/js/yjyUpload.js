@@ -122,8 +122,6 @@
                 var endInsertHtml=template('selectedTpl',[]);
                 inputFileInfo.endInsert=endInsertHtml;
 
-                console.log(dataList);
-
                 //数据渲染栏目
                 Tool.renderProduct('imageMenuTpl',dataList, 'imageMenu');
 
@@ -136,6 +134,7 @@
                 });
 
                 var order=inputFileInfo.options.sort||'created_at-desc';
+
                 var order=order.split('-');
 
                 //设置图片请求列表
@@ -207,6 +206,8 @@
 
                     //已选择图片容器
                     self.setFileColumn();
+
+                    $("#image-select-number").text(inputFileInfo.filesMessage.length);
                     return;
 
                 }
@@ -214,10 +215,8 @@
                 //获得选中图片
                 var itemData={
                     id: id,
-                    url: $(this).attr('data-url'),
-                    url_thumb: $(this).attr('data-url_thumb'),
-                    width: $(this).attr('data-width'),
-                    height: $(this).attr('data-height')
+                    preview: $(this).attr('data-preview'),
+                    name: $(this).attr('data-name'),
                 };
 
                 //限制选中数
@@ -267,12 +266,13 @@
                     self.setFileColumn();
                 }
 
-                console.log(id)
                 //删除图片选中效果
                 Tool.deleteSelectDOM(id);
 
                 //移除当前节点
                 $li.remove();
+
+                $("#image-select-number").text(inputFileInfo.filesMessage.length);
 
             });
 
@@ -418,8 +418,8 @@
                 dataType: "json",
                 beforeSend: function () {},
                 success: function (result) {
-                    if (result.code!=0) {
-                        toasts_error(result.msg);
+                    if (result.code!=1) {
+                        alert(result.msg);
                         return;
                     }
                     //回调方法
@@ -479,16 +479,16 @@
                 beforeSend: function () {},
                 success: function (result) {
 
-                    if (result.code!=0) {
-                        toasts_error(result.msg);
+                   if (result.code!=1) {
+                        alert(result.msg);
                         return;
                     }
 
                     //渲染图片列表
-                    Tool.renderProduct('imageFileTpl',result.data.data, 'imageFile');
+                    Tool.renderProduct('imageFileTpl',result.data.rowsDataList, 'imageFile');
 
                     //设置分页
-                    self.setPage(result.data.totalPages,result.data.pageSize);
+                    self.setPage(result.data.totalPages,result.data.rows);
 
                     //回调方法
                     if(typeof(callback)=='function'){

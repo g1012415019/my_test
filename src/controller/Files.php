@@ -3,7 +3,7 @@
 namespace gongzhe\controller;
 
 use think\Controller;
-use util\Common;
+use gongzhe\utils\Common;
 
 /**
  * 文件 composer
@@ -29,9 +29,13 @@ class Files extends FileBase
             exit;
         }
         $root=dirname(dirname(__FILE__));
+
         $this->assign('filesIndexUrl',$param['filesIndexUrl']);
         $this->assign('catalogIndexUrl',$param['catalogIndexUrl']);
+        $this->assign('pagination_css',file_get_contents($root.'/static/css/pagination.css'));
         $this->assign('index_css',file_get_contents($root.'/static/css/index.css'));
+        $this->assign('pagination',file_get_contents($root.'/static/js/jquery.pagination.js'));
+        $this->assign('template_native',file_get_contents($root.'/static/js/template-native.js'));
         $this->assign('fileIndex',file_get_contents($root.'/static/js/fileIndex.js'));
         $this->assign('yjyUpload',file_get_contents($root.'/static/js/yjyUpload.js'));
         return $this->fetch($root.'/view/file/index.html');
@@ -44,7 +48,14 @@ class Files extends FileBase
      * @qqNumber 1012415019
      */
     private function indexDataList(){
-       print_r((new Common())->httpRequestGet());
+
+        //请求接口获取数据
+        $result=(new Common())->httpRequestGet([
+            'url'=>'getFile',
+        ]);
+
+        $this->apiResult($result['data'],$result['code'],$result['msg']);
+
     }
 
 }
