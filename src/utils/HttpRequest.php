@@ -67,8 +67,7 @@ class HttpRequest{
         if(!in_array($type, ['get','post','multipart'])){
             return false;
         }
-
-        echo   $this->ch;
+        
         //创建连接
         $this->connect();
 
@@ -106,7 +105,7 @@ class HttpRequest{
         $retOutput = json_decode($output, true);
 
         //执行出错返回错误信息
-        if(!is_array($retOutput)||$output===false||$retOutput=='') {
+        if(!is_array($retOutput)||$output===false||$retOutput==='') {
 
             $curlError=curl_error($this->ch);
 
@@ -121,7 +120,7 @@ class HttpRequest{
 
         //断开连接
         $this->disconnect();
-
+        
         return $retOutput;
 
     }

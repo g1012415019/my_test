@@ -14,7 +14,7 @@ use gongzhe\utils\Common;
  * @qqNumber 1012415019
  * Class Catalog
  */
-class Catalog extends Controller
+class Catalog extends FileBase
 {
 
     /**
@@ -26,9 +26,11 @@ class Catalog extends Controller
     public function indexDataList(){
 
         //请求接口获取数据
-        (new Common())->httpRequestGet([
+        $result=(new Common())->httpRequestGet([
             'url'=>'getCatalog',
         ]);
+
+        $this->apiResult($result['data'],$result['code'],$result['msg']);
 
     }
 

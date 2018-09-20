@@ -169,6 +169,35 @@ class Common
     }
 
     /**
+     * 获取应用id
+     * @author gongzhe
+     * @createTime 2018-09-20 11:10:26
+     * @qqNumber 1012415019
+     * @return mixed
+     * @throws \think\Exception
+     */
+    public function getAppId(){
+
+
+        //获取应用配置
+        $config=config('biz.');
+
+        if(empty($config)){
+            throw new \think\Exception('请创建附件系统请求配置文件', 500);
+        }
+
+        $appId=$config['app_id'];
+
+        if(!isset($appId)){
+            throw new \think\Exception('未设置应用id', 500);
+        }
+
+        return $appId;
+
+
+    }
+
+    /**
      * 判断字符串以什么开头
      * @authName 权限配置列表
      * @authStatus 1
@@ -244,6 +273,8 @@ class Common
         $data    =empty($param['data'])?[]:$param['data']; //发送数据
         $method  =empty($param['method'])?'get':$param['method']; //默认get请求
         $is_sign =empty($param['is_sign'])?true:$param['is_sign']; //是否需要签名
+
+        $data['access_app_id']    = $this->getAppId(); //应用id
 
         //获取浏览器信息
         $data['access_source']    = $browse->getAgentType();

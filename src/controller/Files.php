@@ -44,7 +44,7 @@ class Files extends FileBase
      * @qqNumber 1012415019
      */
     private function indexDataList(){
-        (new Common())->httpRequestGet();
+       print_r((new Common())->httpRequestGet());
     }
 
 }

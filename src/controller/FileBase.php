@@ -31,15 +31,15 @@ class FileBase extends Controller
 
         parent::initialize();
 
-        //1 配置是是否正确
-        $checkResult= $this->checkConfig();
-
-        if($checkResult!=true){
-            throw new \think\Exception($checkResult, 500);
-        }
-
-        //设置配置值
-        $this->setConfig();
+//        //1 配置是是否正确
+//        $checkResult= $this->checkConfig();
+//
+//        if($checkResult!=true){
+//            throw new \think\Exception($checkResult, 500);
+//        }
+//
+//        //设置配置值
+//        $this->setConfig();
 
     }
 
@@ -121,27 +121,19 @@ class FileBase extends Controller
 //    }
 
     /**
-     * 返回结果
+     * 返回API数据到客户端
      * @author gongzhe
-     * @createTime 2018-08-29 10:26:51
+     * @createTime 2018-08-24 17:07:06
      * @qqNumber 1012415019
-     * @param array $data 数据
-     * @param string $message 操作提示
-     * @param int $code 返回 code
-     * @param array $options 自定义数据
-     * @return array
+     * @param  mixed     $data 要返回的数据
+     * @param  integer   $code 返回的code
+     * @param  mixed     $msg 提示信息
      */
-    protected function returnResult($data = [], $message = 'success', $code = 0, $options = []){
+    protected function apiResult($data = [],$code =1,$msg=''){
 
-        $result=[
-            'code' => $code,
-            'msg' => (string)$message,
-            'data' =>empty($data)?[]:$data,
-        ];
-
-        return array_merge($result, $options);
-
+        $this->result($data, $code, $msg ,'json');
     }
+
 
 
 }
