@@ -1,32 +1,35 @@
 (function (window, undefined) {
 
-    var FileInput = function(options){
+    var FileInput = function(option){
 
         //合并参数
-        options = $.extend({}, inputFileInfo.defaultInputFileParams, options || {});
+        option = $.extend({}, inputFileInfo.defaultInputFileParams, option || {});
         //设置参数
-        this.setOptions(options);
-        this.fileInputInit(options);
+        this.setoption(option);
+        this.fileInputInit(option);
 
     };
 
     //------------------------------------声明各种变量-------------------------
     var inputFileInfo = {
         //初始化传入参数
-        options : null,
+        option : null,
 
         //选择的图片
         filesMessage: [],
 
         defaultInputFileParams: {
-            type: 1,  //请求栏目类型
+            type: 1,  //上传类型
             page: 1,
-            curPage:1,
+            curPage:1, //当前页码
             endInsert:'',
             multiSelect:false, //默认单选
-            pageSize: 50,
-            chooseLength: 1,
+            pageSize: 50,  //每页大小
             selectModules:'default',
+            fileTipText:'文件大小不能超过200M',
+            imgTipText:'只支持.jpg .gif .png .jpeg 格式，大小不超过2M',
+            fileText:'上传文件',
+            imgText:'上传图片',
         },
 
     };
@@ -104,48 +107,48 @@
          * 设置用户传入的配置
          * @param obj
          */
-        setOptions:function (obj) {
-            inputFileInfo.options=obj;
+        setoption:function (obj) {
+            inputFileInfo.option=obj;
         },
 
         /**
          * 上传图片初始化
-         * @param options
+         * @param option
          */
         fileInputInit: function(){
 
             var self=this;
 
             //加载栏目
-            self.getModules(inputFileInfo.options.type,inputFileInfo.options.selectModules,function (dataList) {
+            self.getModules(inputFileInfo.option.type,inputFileInfo.option.selectModules,function (dataList) {
 
                 var endInsertHtml=template('selectedTpl',[]);
                 inputFileInfo.endInsert=endInsertHtml;
 
                 //数据渲染栏目
-                Tool.renderProduct('imageMenuTpl',dataList, 'imageMenu');
+                Tool.renderProduct('menuTpl',dataList, 'menuMain');
 
                 var column_id;
                 $.each(dataList,function (index,item) {
-                    if(item['module']==inputFileInfo.options.selectModules){
+                    if(item['name']==inputFileInfo.option.selectModules){
                         column_id=item['id'];
                         return false;
                     }
                 });
 
-                var order=inputFileInfo.options.sort||'created_at-desc';
+                var order=inputFileInfo.option.sort||'created_at-desc';
 
                 var order=order.split('-');
 
                 //设置图片请求列表
                 self.setAjaxImgListParameter({
-                    'page':inputFileInfo.options.page, //当前页
-                    'column_id':column_id,
-                    'pageSize':inputFileInfo.options.pageSize, //每页多少条
+                    'page':inputFileInfo.option.page, //当前页
+                    'column_id':column_id, //目录id
+                    'pageSize':inputFileInfo.option.pageSize, //每页多少条
                     'sortField':order[0], //排序字段
                     'dir':order[1],       //排序方式
-                    'module':inputFileInfo.options.module,
-                    'uid':inputFileInfo.options.uid,
+                    'module':inputFileInfo.option.selectModules,
+                    'uid':inputFileInfo.option.uid,
                 });
 
                 //加载图片列表
@@ -155,9 +158,15 @@
                 self.eventFunInit();
 
                 //排序
-                if(inputFileInfo.options.sort!=''){
-                    $('#img_region_list select[name="sort_name"]').val(inputFileInfo.options.sort);
+                if(inputFileInfo.option.sort!=''){
+                    $('#img_region_list select[name="sort_name"]').val(inputFileInfo.option.sort);
                 }
+
+                //获得默认选中的节点
+                var $menu=$('#menuMain li[name="'+inputFileInfo.option.selectModules+'"]');
+
+                //选中默认选中的菜单 未找到显示第一个
+                $menu.length<=0 ? $('#menuMain li:first').click() :$menu.click();
 
             });
         },
@@ -171,7 +180,7 @@
             self.uploadImg();
 
             //菜单栏点击
-            $(document).on('click','#imageMenu li[name="column"]',function () {
+            $(document).on('click','#menuMain li',function () {
 
                 //清除右边图片选中样式
                 $("#img_region_list .pull-left ul li").removeClass('selected');
@@ -180,10 +189,12 @@
                 $(this).addClass('selected').siblings().removeClass('selected');
 
                 var column_id=$(this).attr('data-id'); //栏目id
+                var name=$(this).attr('name'); //栏目id
 
                 self.setAjaxImgListParameter({
                     'column_id': column_id,
-                    'page': 1
+                    'module':name,
+                    'page': 1,
                 });
 
                 //重新加载列表
@@ -220,11 +231,11 @@
                 };
 
                 //限制选中数
-                // if( inputFileInfo.filesMessage.length >= inputFileInfo.options.chooseLength){
+                // if( inputFileInfo.filesMessage.length >= inputFileInfo.option.chooseLength){
                 //     return false;
                 // }
 
-                var flag = inputFileInfo.options.multiSelect ==="false" ? false : true;
+                var flag = inputFileInfo.option.multiSelect ==="false" ? false : true;
 
                 //单选
                 if(flag==false){
@@ -245,8 +256,8 @@
                 $("#image-select-number").text(inputFileInfo.filesMessage.length);
 
                 //回调选择图片的数量
-                if(typeof (inputFileInfo.options.chooseNumberCompletion) == 'function'){
-                    inputFileInfo.options.chooseNumberCompletion(inputFileInfo.filesMessage.length);
+                if(typeof (inputFileInfo.option.chooseNumberCompletion) == 'function'){
+                    inputFileInfo.option.chooseNumberCompletion(inputFileInfo.filesMessage.length);
                 }
 
             });
@@ -310,6 +321,18 @@
 
             var self=this;
 
+            var type=inputFileInfo.option.type;
+            var innerHTML=type==1?inputFileInfo.option.imgText:inputFileInfo.option.fileText;
+            var innerHTMLTips=type==1?inputFileInfo.option.imgTipText:inputFileInfo.option.fileTipText;
+
+            var accept=type==1?{
+                title: 'Images',
+                extensions: 'gif,jpg,jpeg,png',
+                mimeTypes: 'image/*'
+            }:{};
+
+            $('#tips_content_inner').text(innerHTMLTips);
+
             var uploader = WebUploader.create({
 
                 // 选完文件后，是否自动上传。
@@ -318,23 +341,22 @@
                 swf: 'https://cdn.bootcss.com/webuploader/0.1.1/Uploader.swf',
 
                 // 文件接收服务端。
-                server: '/admin/File/uploadImg',
+                server: inputFileInfo.option.urls.uploadImgUrl,
 
                 // 选择文件的按钮。可选。
                 // 内部根据当前运行是创建，可能是input元素，也可能是flash.
-                pick: '#upload',
+                pick: {
+                    id:'#upload',
+                    label :innerHTML,
+                },
 
                 //其它参数信息
                 formData: {
                     column_id: ''
                 },
 
-                // 只允许选择图片文件。
-                accept: {
-                    title: 'Images',
-                    extensions: 'gif,jpg,jpeg,bmp,png',
-                    mimeTypes: 'image/*'
-                },
+                accept:accept,
+
             });
 
             //携带其他参数信息
@@ -369,7 +391,9 @@
                     return;
                 }
 
-                alert(response.msg);
+                //加载图片列表
+                self.getImgList();
+                // alert(response.msg);
 
             });
 
@@ -412,7 +436,7 @@
             self.isLoadModule=1;
 
             $.ajax({
-                url: inputFileInfo.options.urls.getCatalogUrl,
+                url: inputFileInfo.option.urls.getCatalogUrl,
                 type: "GET",
                 data: data,
                 dataType: "json",
@@ -445,6 +469,7 @@
 
             var self=this;
             var imgListParameter=self.getAjaxImgListParameter();
+
             //设置图片请求列表
             for (var item in data){
                 imgListParameter[item]=data[item];
@@ -472,14 +497,14 @@
             self.isLoadImgList=1;
 
             $.ajax({
-                url: inputFileInfo.options.urls.getFileListUrl,
+                url: inputFileInfo.option.urls.getFileListUrl,
                 type: "GET",
                 data: self.getAjaxImgListParameter(),
                 dataType: "json",
                 beforeSend: function () {},
                 success: function (result) {
 
-                   if (result.code!=1) {
+                    if (result.code!=1) {
                         alert(result.msg);
                         return;
                     }
@@ -524,7 +549,7 @@
                 mode: 'fixed',
                 totalData: count,     //数据总条数
                 showData: pageSize,        //每页显示条数
-                current:  inputFileInfo.options.curPage,
+                current:  inputFileInfo.option.curPage,
                 callback: function (api) {
 
                     var current=api.getCurrent();
@@ -532,7 +557,7 @@
                         'page':current,
                     });
 
-                    inputFileInfo.options.curPage=current;
+                    inputFileInfo.option.curPage=current;
 
                     //重新加载图片列表数据
                     self.getImgList();
