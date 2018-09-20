@@ -31,12 +31,12 @@ class HttpRequest{
 
         //url不能为空
         if(empty($config['url'])){
-            throw new \think\Exception($checkResult, 500);
+            throw new \think\Exception('url为空', 500);
         }
 
         //获得签名后的url
         $this->url      = $config['url'];
-        $this->formData = empty($config['data'])?[]:$formData;
+        $this->formData = empty($config['data'])?[]:$config['data'];
 
     }
 
@@ -68,6 +68,7 @@ class HttpRequest{
             return false;
         }
 
+        echo   $this->ch;
         //创建连接
         $this->connect();
 
@@ -101,10 +102,11 @@ class HttpRequest{
 
         //执行连接
         $output = curl_exec($this->ch);
+
         $retOutput = json_decode($output, true);
 
         //执行出错返回错误信息
-        if(!is_array($retOutput)||$output===false) {
+        if(!is_array($retOutput)||$output===false||$retOutput=='') {
 
             $curlError=curl_error($this->ch);
 

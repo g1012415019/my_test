@@ -508,9 +508,25 @@
             'onerror': null
         });
     }
-    {$yjyUpload|raw}
-    {$fileIndex|raw}
 
+    {$yjyUpload|raw}
+
+    //调用文件上传
+    var fileInput = new FileInput({
+        urls:{
+            'getFileListUrl':'{$filesIndexUrl}', //获取文件列表
+            'getCatalogUrl':'{$catalogIndexUrl}',  //获取目录列表
+            'upload':'',  //上传文件服务器处理
+        },
+        uid:0,                                           //用户id
+        type : 1,                                     //栏目类型
+        sort:10,                                       //排序方式
+        module:'',                                   //默认模块
+        selectModules:'',                             //选中模块
+        multiSelect:false,                         //是否多选（ 默认单选）
+        chooseNumberCompletion: function (count,data) {} //选中回调
+
+    });
 
     // $(function () {
     //     alert(11);

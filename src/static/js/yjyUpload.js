@@ -3,7 +3,7 @@
     var FileInput = function(options){
 
         //合并参数
-        options = $.extend({}, NodeList.defaultInputFileParams, options || {});
+        options = $.extend({}, inputFileInfo.defaultInputFileParams, options || {});
         //设置参数
         this.setOptions(options);
         this.fileInputInit(options);
@@ -11,7 +11,7 @@
     };
 
     //------------------------------------声明各种变量-------------------------
-    var NodeList = {
+    var inputFileInfo = {
         //初始化传入参数
         options : null,
 
@@ -59,8 +59,8 @@
          * @returns {boolean}
          */
         findFile: function (id) {
-            for (var i = 0; i < NodeList.filesMessage.length; i++){
-                if(NodeList.filesMessage[i].id == id){
+            for (var i = 0; i < inputFileInfo.filesMessage.length; i++){
+                if(inputFileInfo.filesMessage[i].id == id){
                     return true;
                 }
             }
@@ -84,9 +84,9 @@
          * @param id  需要删除的id
          */
         deleteFile: function (id) {
-            for (var i = 0; i < NodeList.filesMessage.length; i++) {
-                if (NodeList.filesMessage[i].id == id) {
-                    NodeList.filesMessage.splice(i, 1);
+            for (var i = 0; i < inputFileInfo.filesMessage.length; i++) {
+                if (inputFileInfo.filesMessage[i].id == id) {
+                    inputFileInfo.filesMessage.splice(i, 1);
                     return;
                 }
             }
@@ -105,7 +105,7 @@
          * @param obj
          */
         setOptions:function (obj) {
-            NodeList.options=obj;
+            inputFileInfo.options=obj;
         },
 
         /**
@@ -117,10 +117,10 @@
             var self=this;
 
             //加载栏目
-            self.getModules(NodeList.options.type,NodeList.options.selectModules,function (dataList) {
+            self.getModules(inputFileInfo.options.type,inputFileInfo.options.selectModules,function (dataList) {
 
                 var endInsertHtml=template('selectedTpl',[]);
-                NodeList.endInsert=endInsertHtml;
+                inputFileInfo.endInsert=endInsertHtml;
 
                 console.log(dataList);
 
@@ -129,24 +129,24 @@
 
                 var column_id;
                 $.each(dataList,function (index,item) {
-                    if(item['module']==NodeList.options.selectModules){
+                    if(item['module']==inputFileInfo.options.selectModules){
                         column_id=item['id'];
                         return false;
                     }
                 });
 
-                var order=NodeList.options.sort||'created_at-desc';
+                var order=inputFileInfo.options.sort||'created_at-desc';
                 var order=order.split('-');
 
                 //设置图片请求列表
                 self.setAjaxImgListParameter({
-                    'page':NodeList.options.page, //当前页
+                    'page':inputFileInfo.options.page, //当前页
                     'column_id':column_id,
-                    'pageSize':NodeList.options.pageSize, //每页多少条
+                    'pageSize':inputFileInfo.options.pageSize, //每页多少条
                     'sortField':order[0], //排序字段
                     'dir':order[1],       //排序方式
-                    'module':NodeList.options.module,
-                    'uid':NodeList.options.uid,
+                    'module':inputFileInfo.options.module,
+                    'uid':inputFileInfo.options.uid,
                 });
 
                 //加载图片列表
@@ -156,8 +156,8 @@
                 self.eventFunInit();
 
                 //排序
-                if(NodeList.options.sort!=''){
-                    $('#img_region_list select[name="sort_name"]').val(NodeList.options.sort);
+                if(inputFileInfo.options.sort!=''){
+                    $('#img_region_list select[name="sort_name"]').val(inputFileInfo.options.sort);
                 }
 
             });
@@ -221,21 +221,21 @@
                 };
 
                 //限制选中数
-                // if( NodeList.filesMessage.length >= NodeList.options.chooseLength){
+                // if( inputFileInfo.filesMessage.length >= inputFileInfo.options.chooseLength){
                 //     return false;
                 // }
 
-                var flag = NodeList.options.multiSelect ==="false" ? false : true;
+                var flag = inputFileInfo.options.multiSelect ==="false" ? false : true;
 
                 //单选
                 if(flag==false){
-                    NodeList.filesMessage=[];
+                    inputFileInfo.filesMessage=[];
                     $(this).siblings().removeClass('selected');
 
                 };
 
                 //加入选中的图片
-                NodeList.filesMessage.push(itemData);
+                inputFileInfo.filesMessage.push(itemData);
 
                 //添加选中样式
                 $(this).addClass('selected');
@@ -243,11 +243,11 @@
                 //已选择图片容器
                 self.setFileColumn();
 
-                $("#image-select-number").text(NodeList.filesMessage.length);
+                $("#image-select-number").text(inputFileInfo.filesMessage.length);
 
                 //回调选择图片的数量
-                if(typeof (NodeList.options.chooseNumberCompletion) == 'function'){
-                    NodeList.options.chooseNumberCompletion(NodeList.filesMessage.length);
+                if(typeof (inputFileInfo.options.chooseNumberCompletion) == 'function'){
+                    inputFileInfo.options.chooseNumberCompletion(inputFileInfo.filesMessage.length);
                 }
 
             });
@@ -263,7 +263,7 @@
                 Tool.deleteFile(id);
 
                 //数据为空重新刷新
-                if(NodeList.filesMessage.length<=0){
+                if(inputFileInfo.filesMessage.length<=0){
                     self.setFileColumn();
                 }
 
@@ -297,10 +297,10 @@
         //已选择图片容器
         setFileColumn:function () {
 
-            Tool.renderProduct('fileColumnTpl',NodeList.filesMessage, 'fileColumn');
+            Tool.renderProduct('fileColumnTpl',inputFileInfo.filesMessage, 'fileColumn');
 
-            if(NodeList.filesMessage.length<=0){
-                $("#fileColumn").html(NodeList.endInsert);
+            if(inputFileInfo.filesMessage.length<=0){
+                $("#fileColumn").html(inputFileInfo.endInsert);
             }
 
         },
@@ -369,13 +369,13 @@
                     return;
                 }
 
-                art_alert(response.msg);
+                alert(response.msg);
 
             });
 
             // 文件上传失败，显示上传出错。
             uploader.on( 'uploadError', function( file ) {
-                art_alert('上传失败，请刷新页面后重试');
+                alert('上传失败，请刷新页面后重试');
             });
 
             // 完成上传完了，成功或者失败，先删除进度条。
@@ -412,7 +412,7 @@
             self.isLoadModule=1;
 
             $.ajax({
-                url: '/admin/File/getModules',
+                url: inputFileInfo.options.urls.getCatalogUrl,
                 type: "GET",
                 data: data,
                 dataType: "json",
@@ -429,7 +429,7 @@
 
                 },
                 error:function () {
-                    art_alert('网络请求失败，请刷新后重试');
+                    alert('网络请求失败，请刷新后重试');
                 },
                 complete:function () {
 
@@ -472,7 +472,7 @@
             self.isLoadImgList=1;
 
             $.ajax({
-                url: '/admin/File/getImgList',
+                url: inputFileInfo.options.urls.getFileListUrl,
                 type: "GET",
                 data: self.getAjaxImgListParameter(),
                 dataType: "json",
@@ -497,7 +497,7 @@
 
                 },
                 error:function () {
-                    art_alert('网络请求失败，请刷新后重试');
+                    alert('网络请求失败，请刷新后重试');
                 },
                 complete:function () {
 
@@ -524,7 +524,7 @@
                 mode: 'fixed',
                 totalData: count,     //数据总条数
                 showData: pageSize,        //每页显示条数
-                current:  NodeList.options.curPage,
+                current:  inputFileInfo.options.curPage,
                 callback: function (api) {
 
                     var current=api.getCurrent();
@@ -532,7 +532,7 @@
                         'page':current,
                     });
 
-                    NodeList.options.curPage=current;
+                    inputFileInfo.options.curPage=current;
 
                     //重新加载图片列表数据
                     self.getImgList();
@@ -543,7 +543,7 @@
 
         //获得已选择的数据
         getData:function(){
-            return NodeList.filesMessage;
+            return inputFileInfo.filesMessage;
         }
 
     };

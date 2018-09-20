@@ -4,6 +4,9 @@ namespace gongzhe\controller;
 
 use gongzhe\utils\Common;
 
+use think\Controller;
+
+
 /**
  * 文件类
  * @author gongzhe
@@ -12,20 +15,21 @@ use gongzhe\utils\Common;
  * Class File
  * @package app\admin\controller
  */
-class FileBase
+class FileBase extends Controller
 {
 
     private $appId;     //应用id
     private $appSecret; //应用秘钥
     private $config;    //应用秘钥
 
-
     /**
      * 1 检查 配置是是否正确
      * 2 获取 app_id 和 设置 应用秘钥
      *
      */
-    public function __construct (){
+    public function initialize (){
+
+        parent::initialize();
 
         //1 配置是是否正确
         $checkResult= $this->checkConfig();
@@ -103,16 +107,18 @@ class FileBase
         $this->appSecret =$config['app_secret'];
 
     }
-
-    /**
-     * 获取用户配置
-     * @author gongzhe
-     * @createTime 2018-09-12 18:35:25
-     * @qqNumber 1012415019
-     */
-    public function getConfig(){
-       de_bug((new Common())->getRequest([]));
-    }
+//
+//    /**
+//     * 获取用户配置
+//     * @author gongzhe
+//     * @createTime 2018-09-12 18:35:25
+//     * @qqNumber 1012415019
+//     */
+//    public function getConfig(){
+//        (new Common())->httpRequestGet([
+//            'url'=>'fileGetModules'
+//        ]);
+//    }
 
     /**
      * 返回结果

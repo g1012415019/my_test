@@ -41,10 +41,10 @@ class Sign
         }
 
         //获得签名后的url common
-        $this->url      = $this->createSignUrl($config['url']);
         $this->time     = time();
         $this->secret   = $config['secret'];
         $this->data     = $config['data'];
+        $this->url      = $this->createSignUrl($config['url']);
 
     }
 
