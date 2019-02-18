@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html style="height: auto;"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <title>附件管理系统</title>
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+    <link href="/static/plugins/bootstrap/bootstrap.css?v={$version}" type="text/css" rel="stylesheet"/>
+    <link rel="stylesheet" href="/static/css/module/login/AdminLTE.min.css">
+    <link rel="stylesheet" href="/static/css/module/login/login.css">
+
+    <!--css样式文件引用-->
+    <link href="/static/css/font-awesome.min.css?v={$version}" type="text/css" rel="stylesheet"/>
+    <link href="/static/css/iconfont.css?v={$version}" type="text/css" rel="stylesheet"/>
+
+    <!-- jQuery 2.2.3 -->
+    <script type="text/javascript" src="/static/js/jquery.min.js?v={$version}"></script>
+    <!-- Bootstrap 3.3.6 -->
+    <script type="text/javascript" src="/static/plugins/bootstrap/bootstrap.min.js?v={$version}"></script>
+    <script src="/static/js/module/login/login_background.js"></script>
+</head>
+<body class="login-page admin-login-body-background" style="height: auto;">
+<canvas width="1366" height="621"></canvas>
+
+<div class="admin-login-box">
+    <div class="login-logo">
+        <a href="javascript:;" class="login-logo-a"><b>附件</b>管理系统</a>
+    </div>
+    <div class="login-box-body">
+        <p class="login-box-msg">请输入您的登录信息</p>
+
+        <form id="login_form" onsubmit="return false" action="{:url('login/login')}" method="post" class="admin-login-form">
+            <div class="form-group has-feedback">
+                <input id="username" type="text" name="username" value="" class="form-control" placeholder="请输入您的用户名">
+                <span class="fa fa-user  form-control-feedback"></span>
+            </div>
+            <div class="form-group has-feedback">
+                <input id="password" type="password" name="password" value="" class="form-control" placeholder="请输入您的密码">
+                <span class="fa fa-lock form-control-feedback"></span>
+            </div>
+
+            <div>
+                <img src="{:captcha_src()}" alt="captcha" class="admin-login-captcha-img captcha_change" id="captcha_img">
+            </div>
+            <br>
+            <div class="row">
+                <div class="col-xs-8">
+                    <input id="validation" type="text" name="verify" class="form-control verify" placeholder="请输入您的验证码">
+                    <span  class="fa fa-upload  form-control-feedback admin-login-captcha-input-icon"></span>
+                </div>
+                <div class="col-xs-4">
+                    <button type="button" class="btn btn-primary btn-block btn-flat captcha_change">换一张</button>
+                </div>
+            </div>
+
+            <div class="social-auth-links text-center">
+
+                <button type="button" id="submit" class="btn btn-block btn-facebook ladda-button login-submit-button" data-style="slide-up">
+                    <span class="ladda-label">登 录</span>
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>
+{include file="common/toastr"/}
+<script type="text/javascript" src="/static/js/common.js?v={$version}"></script>
+<script src="/static/js/plugins/layer/layer.js"></script>
+
+<!-- /.login-box -->
+<script type="text/javascript">
+
+    //切换验证码
+    $('.captcha_change').click(function(){
+        $('#captcha_img').attr('src', "{:captcha_src()}?" + Math.random());
+    });
+
+
+    //验证字段是否为空
+    function  checkField() {
+
+        //获取到input的用户名 密码 验证码的值
+        var username = $("#username").val().trim();
+        var password = $("#password").val().trim();
+        var validation = $("#validation").val().trim();
+
+        //做逻辑判断
+        if (username==''||typeof (username)=='undefined') {
+            tasts_show('error','请输入用户名','','toast-top-center');
+            return false;
+        }
+
+        if (password==''||typeof (password)=='undefined') {
+            tasts_show('error','请输入密码','','toast-top-center');
+            return false;
+        }
+
+        if (validation==''||typeof (validation)=='undefined') {
+            tasts_show('error','请输入验证码','','toast-top-center');
+            return false;
+        }
+
+        return true;
+    }
+
+    $('#submit').click(function () {
+
+        //验证不通过
+        if(!checkField()){
+            return;
+        }
+
+        var self = $(this);
+
+        self.val('登录中...').attr("disabled","disabled");
+        var $login_form=$('#login_form');
+
+        var url =$login_form.attr("action");
+        var data=$login_form.serialize();
+
+        layer.msg('登录中', {
+            icon: 16,
+            shade: 0.01
+        });
+
+        $.post(url, data, function (data) {
+
+            layer.closeAll('loading');
+
+            if (data.code != 1){
+                //把登录中改为登录
+                self.val('登 录').removeAttr("disabled");
+                layer.alert(data.msg||'未知错误', {icon: 5});
+                $('.captcha_change').click();
+                return;
+            }
+
+            self.val('登录成功');
+            window.location.href = data.data.url;
+
+        }, "json");
+
+    });
+
+    //回车事件
+    document.onkeydown = function (event) {
+        var e = event || window.event;
+        //回车键的键值为13
+        if (e && e.keyCode == 13) {
+            $("#submit").click(); //调用登录按钮的登录事件
+        }
+    };
+
+
+
+</script>
+</body>
+</html>

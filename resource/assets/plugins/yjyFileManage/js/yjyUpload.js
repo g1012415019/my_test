@@ -1,9 +1,10 @@
 (function (window, undefined) {
 
-    var FileInput = function(option){
+    var YjyUpload = function(option){
 
         //合并参数
         option = $.extend({}, inputFileInfo.defaultInputFileParams, option || {});
+
         //设置参数
         this.setoption(option);
         this.fileInputInit(option);
@@ -16,14 +17,17 @@
         option : null,
 
         //选择的图片
-        filesMessage: [],
+        fileDataList: [],
 
         defaultInputFileParams: {
             type: 1,  //上传类型
             page: 1,
             curPage:1, //当前页码
+            sort:'createtime-desc',
             endInsert:'',
+            paramData:{},
             multiSelect:false, //默认单选
+            duplicate:true, //多图上传
             pageSize: 50,  //每页大小
             selectModules:'default',
             fileTipText:'文件大小不能超过200M',
@@ -62,8 +66,8 @@
          * @returns {boolean}
          */
         findFile: function (id) {
-            for (var i = 0; i < inputFileInfo.filesMessage.length; i++){
-                if(inputFileInfo.filesMessage[i].id == id){
+            for (var i = 0; i < inputFileInfo.fileDataList.length; i++){
+                if(inputFileInfo.fileDataList[i].id == id){
                     return true;
                 }
             }
@@ -87,16 +91,16 @@
          * @param id  需要删除的id
          */
         deleteFile: function (id) {
-            for (var i = 0; i < inputFileInfo.filesMessage.length; i++) {
-                if (inputFileInfo.filesMessage[i].id == id) {
-                    inputFileInfo.filesMessage.splice(i, 1);
+            for (var i = 0; i < inputFileInfo.fileDataList.length; i++) {
+                if (inputFileInfo.fileDataList[i].id == id) {
+                    inputFileInfo.fileDataList.splice(i, 1);
                     return;
                 }
             }
         }
     };
 
-    FileInput.prototype = {
+    YjyUpload.prototype = {
 
         isLoadModule:0, //是否加载模块 0 加载完 1 加载中 加载中不在请求
         isLoadImgList:0, //是否加载\图片列表 0 加载完 1 加载中 加载中不在请求
@@ -120,7 +124,7 @@
             var self=this;
 
             //加载栏目
-            self.getModules(inputFileInfo.option.type,inputFileInfo.option.selectModules,function (dataList) {
+            self.getModules(inputFileInfo.option.type,inputFileInfo.option.module,function (dataList) {
 
                 var endInsertHtml=template('selectedTpl',[]);
                 inputFileInfo.endInsert=endInsertHtml;
@@ -128,23 +132,23 @@
                 //数据渲染栏目
                 Tool.renderProduct('menuTpl',dataList, 'menuMain');
 
-                var column_id;
+                var catalogId;
                 $.each(dataList,function (index,item) {
                     if(item['name']==inputFileInfo.option.selectModules){
-                        column_id=item['id'];
+                        catalogId=item['id'];
                         return false;
                     }
                 });
 
-                var order=inputFileInfo.option.sort||'created_at-desc';
+                var order=inputFileInfo.option.sort;
 
                 var order=order.split('-');
 
                 //设置图片请求列表
                 self.setAjaxImgListParameter({
                     'page':inputFileInfo.option.page, //当前页
-                    'column_id':column_id, //目录id
-                    'pageSize':inputFileInfo.option.pageSize, //每页多少条
+                    'catalogId':catalogId, //目录id
+                    'rows':inputFileInfo.option.pageSize, //每页多少条
                     'sortField':order[0], //排序字段
                     'dir':order[1],       //排序方式
                     'module':inputFileInfo.option.selectModules,
@@ -188,11 +192,14 @@
                 //加载选中的样式
                 $(this).addClass('selected').siblings().removeClass('selected');
 
-                var column_id=$(this).attr('data-id'); //栏目id
+                var catalogId=$(this).attr('data-id'); //栏目id
                 var name=$(this).attr('name'); //栏目id
 
+                //切换模块当前页为1
+                inputFileInfo.option.curPage=1;
+
                 self.setAjaxImgListParameter({
-                    'column_id': column_id,
+                    'catalogId': catalogId,
                     'module':name,
                     'page': 1,
                 });
@@ -218,9 +225,12 @@
                     //已选择图片容器
                     self.setFileColumn();
 
-                    $("#image-select-number").text(inputFileInfo.filesMessage.length);
+                    $("#image-select-number").text(inputFileInfo.fileDataList.length);
 
                     self.confirmChange();
+
+                    //图片拖动
+                    self.loadGridly();
                     return;
 
                 }
@@ -228,26 +238,32 @@
                 //获得选中图片
                 var itemData={
                     id: id,
-                    preview: $(this).attr('data-preview'),
-                    name: $(this).attr('data-name'),
+                    preview: $(this).attr('data-preview'), //预览图
+                    name: $(this).attr('data-name'),   //图片名字
+                    path:$(this).attr('data-path'),
+                    size:$(this).attr('data-size'),
+                    app_id:$(this).attr('data-app_id'),
+                    catalog_id:$(this).attr('data-catalog_id'),
+                    files_type:$(this).attr('data-files_type'),
+                    styles:JSON.parse($(this).attr('data-styles')),
                 };
 
                 //限制选中数
-                // if( inputFileInfo.filesMessage.length >= inputFileInfo.option.chooseLength){
+                // if( inputFileInfo.fileDataList.length >= inputFileInfo.option.chooseLength){
                 //     return false;
                 // }
 
-                var flag = inputFileInfo.option.multiSelect ==="false" ? false : true;
+                var flag = inputFileInfo.option.multiSelect ==false ? false : true;
 
                 //单选
                 if(flag==false){
-                    inputFileInfo.filesMessage=[];
+                    inputFileInfo.fileDataList=[];
                     $(this).siblings().removeClass('selected');
 
                 };
 
                 //加入选中的图片
-                inputFileInfo.filesMessage.push(itemData);
+                inputFileInfo.fileDataList.push(itemData);
 
                 //添加选中样式
                 $(this).addClass('selected');
@@ -255,21 +271,24 @@
                 //已选择图片容器
                 self.setFileColumn();
 
-                $("#image-select-number").text(inputFileInfo.filesMessage.length);
+                $("#image-select-number").text(inputFileInfo.fileDataList.length);
 
                 self.confirmChange();
 
                 //回调选择图片的数量
                 if(typeof (inputFileInfo.option.chooseNumberCompletion) == 'function'){
-                    inputFileInfo.option.chooseNumberCompletion(inputFileInfo.filesMessage.length);
+                    inputFileInfo.option.chooseNumberCompletion(inputFileInfo.fileDataList.length);
                 }
+
+                //图片拖动
+                self.loadGridly();
 
             });
 
             //点击×删除数据
             $(document).on('click','#fileColumn i[name="logo-del"]',function () {
 
-                var $li= $(this).parent();
+                var $li= $(this).parents('.file_column_img');
 
                 var id = $li.attr('data-id');
 
@@ -277,19 +296,25 @@
                 Tool.deleteFile(id);
 
                 //数据为空重新刷新
-                if(inputFileInfo.filesMessage.length<=0){
+                if(inputFileInfo.fileDataList.length<=0){
                     self.setFileColumn();
                 }
 
                 //删除图片选中效果
                 Tool.deleteSelectDOM(id);
 
-                //移除当前节点
-                $li.remove();
+                //重新渲染这个容器
+                self.setFileColumn();
 
-                $("#image-select-number").text(inputFileInfo.filesMessage.length);
+                $("#image-select-number").text(inputFileInfo.fileDataList.length);
 
                 self.confirmChange();
+
+                //这里需要延迟600毫秒秒 以防拖动报错
+                //图片拖动
+                setTimeout(function () {
+                    self.loadGridly();
+                },600)
             });
 
             //点击下拉框过滤
@@ -297,10 +322,8 @@
 
                 var val=$(this).val();
                 var order=val.split('-');
-                var column_id=$('#imageMenu li.selected ',document).attr('data-id');
 
                 self.setAjaxImgListParameter({
-                    'column_id': column_id,
                     'sortField':order[0], //排序字段
                     'dir':order[1],       //排序方式
                     'page': 1
@@ -308,14 +331,77 @@
 
                 self.getImgList();
             });
+
+            //点击搜索
+            $(document).on('click','#img_region_list #btn_search',function () {
+
+                var val=$('#keyword').val();
+
+                self.setAjaxImgListParameter({
+                    'keyword': val,
+                    'page': 1
+                });
+
+                self.getImgList();
+            });
+
+        },
+
+        //图片拖动事件
+        loadGridly:function () {
+
+            var self=this;
+
+            if(inputFileInfo.fileDataList.length<=1){
+                return;
+            }
+
+            $('#fileColumn').dad({
+                draggable:'.file_item',
+                callback: function (restData) {
+
+                    var indexData=[];
+
+                    //获取改动后的索引
+                    $('#fileColumn .img_item',document).each(function (index,item) {
+                        indexData.push($(item).attr('data-index'));
+                    });
+
+                    if(indexData.length>0){
+
+                        //删除最后一个凭空出现的节点
+                        indexData.pop();
+
+                        //获取原始已选择商品数据
+                        var data=self.getData()['data'];
+                        var tempData=[];
+
+                        //获取拖动排序后的值
+                        indexData.forEach(function (value) {
+                            tempData.push(data[value]);
+                        });
+
+                        //重新设置排序后的商品数组
+                        self.setData(tempData);
+
+                        //重新渲染这个容器
+                        self.setFileColumn();
+
+                        //重新绑定图片拖动事件
+                        self.loadGridly();
+
+                    }
+                }
+            });
+
         },
 
         //已选择图片容器
         setFileColumn:function () {
 
-            Tool.renderProduct('fileColumnTpl',inputFileInfo.filesMessage, 'fileColumn');
+            Tool.renderProduct('fileColumnTpl',inputFileInfo.fileDataList, 'fileColumn');
 
-            if(inputFileInfo.filesMessage.length<=0){
+            if(inputFileInfo.fileDataList.length<=0){
                 $("#fileColumn").html(inputFileInfo.endInsert);
             }
 
@@ -326,130 +412,59 @@
 
             var self=this;
 
-            var type=inputFileInfo.option.type;
-            var innerHTML=type==1?inputFileInfo.option.imgText:inputFileInfo.option.fileText;
-            var innerHTMLTips=type==1?inputFileInfo.option.imgTipText:inputFileInfo.option.fileTipText;
-
-            var accept=type==1?{
-                title: 'Images',
-                extensions: 'gif,jpg,jpeg,png',
-                mimeTypes: 'image/*'
-            }:{};
-
-            $('#tips_content_inner').text(innerHTMLTips);
-
-            var uploader = WebUploader.create({
-
-                // 选完文件后，是否自动上传。
-                auto: true,
-                // swf文件路径
-                swf: 'https://cdn.bootcss.com/webuploader/0.1.1/Uploader.swf',
-
-                // 文件接收服务端。
-                server: inputFileInfo.option.urls.uploadImgUrl,
-
-                // 选择文件的按钮。可选。
-                // 内部根据当前运行是创建，可能是input元素，也可能是flash.
-                pick: {
-                    id:'#upload',
-                    label :innerHTML,
+            var uploader=new FileInput({
+                id:'#upload',
+                //额外参数
+                formData:{
+                    code:'default'
                 },
-
-                fileSingleSizeLimit: 500 * 1024 * 1024,         //限制上传单个文件大小200M
-                fileSizeLimit: 500 * 1024 * 1024,              //限制上传所有文件大小200M
-
-                //其它参数信息
-                formData: {
-                    column_id: ''
-                },
-
-                accept:accept,
-
+                is_tips:true,   //是否显示提示
+                is_progress_bar:true,   //是否显示进度条
+                duplicate:inputFileInfo.option.duplicate,
+                type:inputFileInfo.option.type,
+                'uploadImgUrl':inputFileInfo.option.urls.uploadImgUrl,
             });
+
+            //创建上传
+            uploader.init();
 
             //携带其他参数信息
-            uploader.on( 'uploadBeforeSend', function( block, data ) {
+            uploader.uploadBeforeSend=function () {
 
                 var $menuMain=$('#menuMain li.selected ',document);
-                var column_id=$menuMain.attr('data-id'); //目录id
+                var code=$menuMain.attr('data-code'); //目录id
 
-                // 修改data可以控制发送哪些携带数据。
-                data.column_id = column_id;
+                return {
+                    code:code
+                };
 
-            });
+            };
 
-            //上传前的判断处理
-            uploader.on('error', function( type ){
-
-                $( '#progress_bar_main' ).hide().find().remove();
-                console.log(type);
-
-                if ( type === 'F_DUPLICATE' ) {
-                    alert('文件重复，不能上传！')
-                }
-                if(type=="Q_EXCEED_SIZE_LIMIT"){
-                    alert("文件大小不能超过500M");
-                }
-
-            });
-
-            // 文件上传过程中创建进度条实时显示
-            uploader.on( 'uploadProgress', function( file, percentage ) {
-
-                var $progressBarMain = $( '#progress_bar_main' ),
-                    $percent = $( '#progress_bars' );
-                // 避免重复创建
-                if ( !$percent.length ) {
-                    var progressBarsHtml='<div id="progress_bars" class="progress-bars"><span id="progress_bar_value" class="progress-bar-value">0%</span><span id="percentage" class="percentage" style="width: 0%;"></span></div>';
-                    $(progressBarsHtml).appendTo( $progressBarMain );
-                }
-                var percentage=(percentage * 100 ).toFixed(2)+ '%';
-                $('#progress_bar_value',$progressBarMain).text(percentage);
-                $('#percentage',$progressBarMain).css( 'width',percentage);
-            });
-
-            // 文件上传成功，隐藏进度条
-            uploader.on( 'uploadSuccess', function( file,response  ) {
-
-                if(response.code==0){
-                    self.getImgList();
-                    return;
-                }
-
+            //文件上传成功
+            uploader.uploadSuccess=function () {
                 //加载图片列表
                 self.getImgList();
-                // alert(response.msg);
+            };
 
-            });
-
-            // 文件上传失败，显示上传出错。
-            uploader.on( 'uploadError', function( file ) {
-                alert('上传失败，请刷新页面后重试');
-            });
-
-            // 完成上传完了，成功或者失败，先删除进度条。
-            uploader.on( 'uploadComplete', function( file ) {
-                $( '#progress_bar_main' ).hide().remove();
-            });
         },
 
         /**
          * 获取模块列表
          * @param type  1 图片  2 文件
-         * @param selectModules  默认选中的模块
+         * @param module  模块
          * @param callback  回调方法
          */
-        getModules:function(type,selectModules,callback){
+        getModules:function(type,module,callback){
 
             var self=this;
             //默认加载图片
             var type=type||1;
             //默认选中默认模块
-            var selectModules=selectModules||'default';
+            var module=module||'default';
 
             var data={
                 'type':type,
-                'selectModule':selectModules,
+                'module':module,
             };
 
             //请求中不能再请求
@@ -468,17 +483,18 @@
                 beforeSend: function () {},
                 success: function (result) {
                     if (result.code!=1) {
-                        alert(result.msg);
+                        toasts_error(result.msg);
                         return;
                     }
+
                     //回调方法
                     if(typeof(callback)=='function'){
-                        callback(result.data,selectModules);
+                        callback(result.data,module);
                     }
 
                 },
                 error:function () {
-                    alert('网络请求失败，请刷新后重试');
+                    toasts_error('网络请求失败，请刷新后重试');
                 },
                 complete:function () {
 
@@ -530,7 +546,7 @@
                 success: function (result) {
 
                     if (result.code!=1) {
-                        alert(result.msg);
+                        toasts_error(result.msg);
                         return;
                     }
 
@@ -538,7 +554,7 @@
                     Tool.renderProduct('imageFileTpl',result.data.rowsDataList, 'imageFile');
 
                     //设置分页
-                    self.setPage(result.data.totalPages,result.data.rows);
+                    self.setPage(result.data.totalPages,result.data.rows,result.data.totalPagesNumber);
 
                     //回调方法
                     if(typeof(callback)=='function'){
@@ -547,7 +563,7 @@
 
                 },
                 error:function () {
-                    alert('网络请求失败，请刷新后重试');
+                    toasts_error('网络请求失败，请刷新后重试');
                 },
                 complete:function () {
 
@@ -559,7 +575,7 @@
         },
 
         //图片分页
-        setPage: function(count,pageSize,curPage){
+        setPage: function(count,pageSize,totalPages){
 
             var self=this;
 
@@ -569,31 +585,70 @@
                 return;
             }
 
-            //加载分页插件
-            $('#pagination').pagination({
-                mode: 'fixed',
-                totalData: count,     //数据总条数
-                showData: pageSize,        //每页显示条数
-                current:  inputFileInfo.option.curPage,
-                callback: function (api) {
+            //移除以前分页信息
+            $('#totalNumber').text(0);
 
-                    var current=api.getCurrent();
+            var element = $('#pagination_element');
+            var options = {
+                bootstrapMajorVersion:3, //对应的bootstrap版本
+                currentPage: inputFileInfo.option.curPage, //当前页数，这里是用的EL表达式，获取从后台传过来的值
+                numberOfPages: 5, //每页页数
+                totalPages:totalPages, //总页数，这里是用的EL表达式，获取从后台传过来的值
+                shouldShowPage:true,//是否显示该按钮
+                size:"normal",
+                itemTexts: function (type, page, current) {//设置显示的样式，默认是箭头
+                    switch (type) {
+                        case "first":
+                            return "首页";
+                        case "prev":
+                            return "上一页";
+                        case "next":
+                            return "下一页";
+                        case "last":
+                            return "末页";
+                        case "page":
+                            return page;
+                    }
+                },
+                //点击事件
+                onPageClicked: function (event, originalEvent, type, page) {
+
                     self.setAjaxImgListParameter({
-                        'page':current,
+                        'page':page,
                     });
 
-                    inputFileInfo.option.curPage=current;
+                    inputFileInfo.option.curPage=page;
 
                     //重新加载图片列表数据
                     self.getImgList();
+
                 }
-            });
+            };
+            element.bootstrapPaginator(options);
+
+            $('#total_number_content').css('right',($('#pagination_element').width()+10));
+            $('#totalNumber').text(count);
 
         },
 
         //获得已选择的数据
         getData:function(){
-            return inputFileInfo.filesMessage;
+            return {
+                data:inputFileInfo.option.multiSelect==0?inputFileInfo.fileDataList[0]:inputFileInfo.fileDataList,
+                paramData:inputFileInfo.option.paramData,
+                multiSelect: inputFileInfo.option.multiSelect,
+            };
+        },
+
+        //设置已选择的值
+        setData:function (data) {
+            inputFileInfo.fileDataList=data;
+        },
+
+        //刷新列表
+        refresh:function () {
+
+            this.getImgList();
         },
 
         //确认按钮状态变动
@@ -605,5 +660,5 @@
 
         }
     };
-    window.FileInput = FileInput;
+    window.YjyUpload = YjyUpload;
 })(window);
